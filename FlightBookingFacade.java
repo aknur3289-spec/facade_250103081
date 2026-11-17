@@ -16,6 +16,7 @@ public class FlightBookingFacade {
         this.ticketIssuer = new TicketIssuer();
     }
 
+    // old version (8 params) - still works, just uses STANDARD tier
     public String bookFlight(String passengerName,
                              String flightCode,
                              String seatNumber,
@@ -24,15 +25,33 @@ public class FlightBookingFacade {
                              double bagWeightKg,
                              String currency,
                              String cardNumber) {
+        return bookFlight(passengerName, flightCode, seatNumber, baseFareUSD,
+                bagCount, bagWeightKg, currency, cardNumber, "STANDARD");
+    }
+
+    // phase 2 version with loyalty tier
+    public String bookFlight(String passengerName,
+                             String flightCode,
+                             String seatNumber,
+                             double baseFareUSD,
+                             int bagCount,
+                             double bagWeightKg,
+                             String currency,
+                             String cardNumber,
+                             String loyaltyTier) {
         String lockToken = null;
+        String tier = (loyaltyTier == null) ? "STANDARD" : loyaltyTier.trim().toUpperCase();
 
         try {
             // 1. connect and lock the seat
             seatSystem.connectToReservationServer();
             lockToken = seatSystem.lockSeat(flightCode, seatNumber, passengerName);
 
-            // 2. baggage fee
-            double baggageFee = baggageEngine.calculateBaggageFeeUSD(bagCount, bagWeightKg);
+            // 2. baggage fee (silver and gold dont pay for bags)
+            double baggageFee = 0.0;
+            if (!tier.equals("SILVER") && !tier.equals("GOLD")) {
+                baggageFee = baggageEngine.calculateBaggageFeeUSD(bagCount, bagWeightKg);
+            }
             double totalUSD = baseFareUSD + baggageFee;
 
             // 3. convert to passenger currency
@@ -40,6 +59,9 @@ public class FlightBookingFacade {
 
             // 4. payment
             paymentProcessor.initializeGateway();
+            if (tier.equals("SILVER")) {
+                paymentProcessor.applyPromoCode("SILVER-FREE-BAG");
+            }
             String receiptId = paymentProcessor.chargeCard(cardNumber, convertedTotal, currency);
 
             // 5. ticket
