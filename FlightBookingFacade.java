@@ -27,13 +27,33 @@ public class FlightBookingFacade {
         String lockToken = null;
 
         try {
-            // TODO: lock seat, baggage, currency, payment, ticket
-            return "";
+            // 1. connect and lock the seat
+            seatSystem.connectToReservationServer();
+            lockToken = seatSystem.lockSeat(flightCode, seatNumber, passengerName);
+
+            // 2. baggage fee
+            double baggageFee = baggageEngine.calculateBaggageFeeUSD(bagCount, bagWeightKg);
+            double totalUSD = baseFareUSD + baggageFee;
+
+            // 3. convert to passenger currency
+            double convertedTotal = currencyConverter.convertFromUSD(totalUSD, currency);
+
+            // 4. payment
+            paymentProcessor.initializeGateway();
+            String receiptId = paymentProcessor.chargeCard(cardNumber, convertedTotal, currency);
+
+            // 5. ticket
+            return ticketIssuer.generateTicket(passengerName, flightCode, lockToken, receiptId);
+
         } catch (RuntimeException ex) {
-            // TODO: release seat
+            // something failed -> give the seat back
+            if (lockToken != null) {
+                seatSystem.releaseSeatLock(lockToken);
+            }
+            System.out.println("[Facade] Booking failed for " + passengerName + ": " + ex.getMessage());
             return "BOOKING_FAILED: " + ex.getMessage();
         } finally {
-            // TODO: disconnect
+            seatSystem.disconnect();
         }
     }
 }
