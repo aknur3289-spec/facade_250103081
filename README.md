@@ -44,3 +44,9 @@ java Main
 - Test 2 – seat 13A is blocked, returns BOOKING_FAILED, program keeps going
 - Test 3 / 3b – bad card number, seat lock is released, then disconnect
 - Test 4 – SILVER, 3 bags 30 kg: no `[BaggageEngine]` line, 10% promo applied
+
+## Status
+
+Done – Phase 1 and Phase 2 are finished, all tests in `Main` pass.
+
+**This lab was done mostly with AI (Claude AI by Anthropic).**
