@@ -41,5 +41,32 @@ public class Main {
                 "9999" // too short -> payment fails, seat should be released
         );
         System.out.println("Result 3: " + ticket3 + "\n");
+
+        System.out.println("=== TEST 3b: Rollback with seat 08C and card 1234 ===");
+        String ticket3b = bookingFacade.bookFlight(
+                "Aigerim Nurlanova",
+                "KZ204",
+                "08C",
+                250.00,
+                1,
+                10.0,
+                "USD",
+                "1234"
+        );
+        System.out.println("Result 3b: " + ticket3b + "\n");
+
+        System.out.println("=== TEST 4: SILVER tier (no bag fee + promo) ===");
+        String ticket4 = bookingFacade.bookFlight(
+                "Aruzhan Tulegenova",
+                "KC101",
+                "21F",
+                320.00,
+                3,
+                30.0,
+                "USD",
+                "4532015112830366",
+                "SILVER"
+        );
+        System.out.println("Result 4: " + ticket4 + "\n");
     }
 }
